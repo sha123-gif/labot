@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Chat with LaBot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <!-- Optional: Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <!-- Animate.css for animations -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 600px;
+            height: 80%;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .chat-header {
+            background-color: black;
+            color: #ffffff;
+            padding: 10px;
+            text-align: center;
+            position: relative;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            font-weight: bold;
+        }
+        
+        .chat-header .logout-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        
+        .chat-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+        
+        .chat-footer {
+            padding: 10px;
+            background-color: #ffffff;
+            border-top: 1px solid #dee2e6;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+        
+        .message {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-message {
+            align-self: flex-end;
+            background-color: lightgoldenrodyellow;
+            color: black;
+            max-width: 70%;
+            border-radius: 10px;
+            padding: 10px;
+            margin-right: 10px;
+        }
+        
+        .bot-message {
+            align-self: flex-start;
+            background-color: black;
+            color: #fff;
+            max-width: 70%;
+            border-radius: 10px;
+            padding: 10px;
+            margin-left: 10px;
+        }
+        
+        .message-content {
+            word-wrap: break-word;
+        }
+        
+        .message-time {
+            font-size: 12px;
+            margin-left: 5px;
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2 class="mb-0">Chat with LaBot</h2>
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-light logout-btn">Logout</a>
+        </div>
+        <div id="chat-content" class="chat-content">
+            <!-- Chat messages will be appended here -->
+        </div>
+        <div class="chat-footer">
+            <div class="input-group">
+                <input type="text" id="message" class="form-control" placeholder="Type a message..." aria-label="Type a message">
+                <div class="input-group-append">
+                    <button class="btn btn-primary" type="button" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        function sendMessage() {
+            var message = document.getElementById('message').value;
+            if (message.trim() === "") return;
+
+            var chatContent = document.getElementById('chat-content');
+            var userMessage = '<div class="message user-message">' +
+                '<div class="message-content">' +
+                message +
+                '<span class="message-time">' + getCurrentTime() + '</span>' +
+                '</div>' +
+                '</div>';
+
+            chatContent.innerHTML += userMessage;
+            document.getElementById('message').value = '';
+            chatContent.scrollTop = chatContent.scrollHeight;
+
+            fetch('/get_response', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: 'message=' + encodeURIComponent(message)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    var botMessage = '<div class="message bot-message">' +
+                        '<div class="message-content">' +
+                        data.response +
+                        '<span class="message-time">' + getCurrentTime() + '</span>' +
+                        '</div>' +
+                        '</div>';
+                    chatContent.innerHTML += botMessage;
+                    chatContent.scrollTop = chatContent.scrollHeight;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        function getCurrentTime() {
+            var now = new Date();
+            var hours = now.getHours();
+            var minutes = now.getMinutes();
+            var ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            var time = hours + ':' + minutes + ' ' + ampm;
+            return time;
+        }
+    </script>
+</body>
+
+</html>
